@@ -1,0 +1,30 @@
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
+pydantic-settings
+
+#Document processing dependencies
+PyPDF2
+python-docx
+python-magic
+
+# LangChain & RAG
+langchain
+langchain-core
+langchain-community
+langchain-text-splitters
+langchain-chroma
+chromadb
+
+
+
+# LangChain Google Integration
+langchain-google-genai
+
+# Utilities
+python-dotenv
+aiofiles
+
+# LLM Provider - Gemini
+google-generativeai
