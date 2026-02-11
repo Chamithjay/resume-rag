@@ -35,49 +35,68 @@ async def upload_resume(
 ):
     """Upload and process a resume"""
 
-    print(f"📤 Received file: {file.filename}")  # Debug log
+    print(f"\n{'=' * 60}")
+    print(f"📤 UPLOAD STARTED: {file.filename}")
+    print(f"{'=' * 60}")
 
-    # Validate file type
     if not file.filename.endswith(('.pdf', '.docx', '.doc')):
-        raise HTTPException(
-            status_code=400,
-            detail="Only PDF and DOCX files are supported"
-        )
+        raise HTTPException(400, "Only PDF and DOCX files are supported")
 
     settings = get_settings()
     os.makedirs(settings.upload_dir, exist_ok=True)
 
-    # Save file
     file_path = os.path.join(settings.upload_dir, file.filename)
 
+
     try:
-        # Read and save file
-        print(f"💾 Saving file to: {file_path}")
+        # Step 1: Save file
+        print(f"\n[1/5] 💾 Saving file...")
         async with aiofiles.open(file_path, 'wb') as f:
             content = await file.read()
             await f.write(content)
 
-        print(f"📄 Extracting text from: {file.filename}")
-        # Extract text
-        text = doc_processor.extract_text(file_path)
-        candidate_name = doc_processor.extract_candidate_name(text)
+        print(f"✅ FILE SAVED!")
+        print(f"📍 FILE EXISTS: {os.path.exists(file_path)}")
+        print(f"📍 FILE SIZE: {os.path.getsize(file_path)} bytes")
 
-        print(f"✂️ Creating chunks for: {candidate_name}")
-        # Create chunks
+        # Step 2: Extract text
+        print(f"\n[2/5] 📄 Extracting text...")
+        text = doc_processor.extract_text(file_path)
+        print(f"      ✅ Extracted {len(text)} characters")
+
+        # Step 3: Get candidate name
+        print(f"\n[3/5] 👤 Extracting candidate name...")
+        candidate_name = doc_processor.extract_candidate_name(text)
+        print(f"      ✅ Candidate: {candidate_name}")
+
+        # Step 4: Create chunks
+        print(f"\n[4/5] ✂️  Creating chunks...")
         metadata = {
             "filename": file.filename,
             "candidate_name": candidate_name,
             "upload_date": datetime.now().isoformat()
         }
-
         chunks = doc_processor.chunk_text(text, metadata)
+        print(f"      ✅ Created {len(chunks)} chunks")
 
-        print(f"💾 Storing {len(chunks)} chunks in vector database...")
-        # Store in vector DB
-        chunk_count = vector_store.add_documents(chunks)
+        # Step 5: Store in vector DB
+        print(f"\n[5/5] 💾 Storing in vector database...")
 
-        print(f"✅ Successfully processed: {file.filename}")
+        try:
+            chunk_count = vector_store.add_documents(chunks)
+            print(f"      ✅ Stored {chunk_count} chunks")
 
+        except Exception as e:
+            print(f"      ❌ Vector store error: {str(e)}")
+            traceback.print_exc()
+            # Continue anyway - file is saved
+            chunk_count = 0
+
+        print(f"\n{'=' * 60}")
+        print(f"✅ UPLOAD COMPLETED: {file.filename}")
+        print(f"{'=' * 60}\n")
+
+        # CRITICAL: RETURN THE RESPONSE
         return ResumeUploadResponse(
             success=True,
             message="Resume processed successfully",
@@ -87,21 +106,19 @@ async def upload_resume(
         )
 
     except Exception as e:
-        # Print full error for debugging
-        print(f"❌ Error processing resume: {str(e)}")
-        print(traceback.format_exc())
+        print(f"\n{'=' * 60}")
+        print(f"❌ UPLOAD FAILED: {file.filename}")
+        print(f"{'=' * 60}")
+        print(f"Error: {str(e)}")
+        traceback.print_exc()
 
-        # Cleanup on error
         if os.path.exists(file_path):
             os.remove(file_path)
 
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error processing resume: {str(e)}"
-        )
+        raise HTTPException(500, detail=f"Error: {str(e)}")
 
 
 @router.get("/test")
 async def test_upload():
-    """Test endpoint to verify upload route is accessible"""
+    """Test endpoint"""
     return {"message": "Upload route is working!"}

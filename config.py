@@ -1,5 +1,6 @@
 from pydantic_settings import BaseSettings
 from functools import lru_cache
+import os
 
 
 class Settings(BaseSettings):
@@ -12,22 +13,28 @@ class Settings(BaseSettings):
     host: str = "0.0.0.0"
     port: int = 8000
 
-    # Paths
-    upload_dir: str = "../data/uploads"
-    chroma_dir: str = "../data/chroma_db"
+    # Paths - Now from environment
+    upload_dir: str
+    chroma_dir: str
 
     # RAG Settings
     chunk_size: int = 500
     chunk_overlap: int = 50
     retrieval_k: int = 5
 
-    # LLM Settings (Gemini)
+    # Gemini Settings
     llm_model: str = "gemini-1.5-flash"
     gemini_temperature: float = 0.0
     gemini_max_tokens: int = 2048
 
     class Config:
         env_file = ".env"
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Create directories
+        os.makedirs(self.upload_dir, exist_ok=True)
+        os.makedirs(self.chroma_dir, exist_ok=True)
 
 
 @lru_cache()
