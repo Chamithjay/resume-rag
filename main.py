@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routes import UploadRoute
+from routes import UploadRoute, QueryRoute
 
 
 app = FastAPI()
@@ -15,6 +15,7 @@ app.add_middleware(
 )
 
 app.include_router(UploadRoute.router, prefix="", tags=["Upload"])
+app.include_router(QueryRoute.router, prefix="", tags=["Query"])
 @app.get("/")
 async def root():
     return {
@@ -28,5 +29,6 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app",
         host="0.0.0.0",
-        port=8080
+        port=8080,
+        reload=True
     )

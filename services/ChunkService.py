@@ -1,25 +1,24 @@
 from typing import List
 
+from typing import List
+
 class ChunkService:
-    def __init__(self, chunk_size: int = 500):
+    def __init__(self, chunk_size: int = 30, overlap: int = 5):
         self.chunk_size = chunk_size
+        self.overlap = overlap
 
     def split_text(self, text: str) -> List[str]:
-
         words = text.split()
         chunks = []
-        current_chunk = ""
 
-        for word in words:
-            # +1 for space
-            if len(current_chunk) + len(word) + 1 > self.chunk_size:
-                chunks.append(current_chunk.strip())
-                current_chunk = word + " "
-            else:
-                current_chunk += word + " "
+        start = 0
+        while start < len(words):
+            end = start + self.chunk_size
+            chunk_words = words[start:end]
+            chunks.append(" ".join(chunk_words))
 
-        if current_chunk:
-            chunks.append(current_chunk.strip())
+            # Move start forward by chunk_size - overlap
+            start += self.chunk_size - self.overlap
 
         print(f"\nSplit into {len(chunks)} chunks")
         if chunks:
