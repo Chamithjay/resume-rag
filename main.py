@@ -1,17 +1,9 @@
-import os
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from config import get_settings
-from routes import upload, query, management
+from routes import UploadRoute
 
-settings = get_settings()
 
-app = FastAPI(
-    title=settings.app_name,
-    description="RAG-based Resume Analyzer API",
-    version="1.0.0"
-)
+app = FastAPI()
 
 # CORS middleware for Streamlit
 app.add_middleware(
@@ -22,11 +14,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers
-app.include_router(upload.router)
-app.include_router(query.router)
-app.include_router(management.router)
-
+app.include_router(UploadRoute.router, prefix="", tags=["Upload"])
 @app.get("/")
 async def root():
     return {
@@ -39,7 +27,6 @@ if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
         "main:app",
-        host=settings.host,
-        port=settings.port,
-        reload=settings.debug
+        host="0.0.0.0",
+        port=8080
     )
