@@ -2,6 +2,7 @@ import PyPDF2
 from pathlib import Path
 from fastapi import HTTPException
 
+
 class PDFService:
 
     def extract_text(self, file_path: str) -> str:
