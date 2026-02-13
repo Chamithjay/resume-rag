@@ -2,6 +2,7 @@ from typing import List
 
 from typing import List
 
+
 class ChunkService:
     def __init__(self, chunk_size: int = 30, overlap: int = 5):
         self.chunk_size = chunk_size

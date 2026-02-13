@@ -2,13 +2,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from routes import UploadRoute, QueryRoute
 
-
 app = FastAPI()
 
 # CORS middleware for Streamlit
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, specify Streamlit URL
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -16,6 +15,8 @@ app.add_middleware(
 
 app.include_router(UploadRoute.router, prefix="", tags=["Upload"])
 app.include_router(QueryRoute.router, prefix="", tags=["Query"])
+
+
 @app.get("/")
 async def root():
     return {
@@ -24,8 +25,10 @@ async def root():
         "docs": "/docs"
     }
 
+
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "main:app",
         host="0.0.0.0",

@@ -7,7 +7,7 @@ UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 class FileService:
     @staticmethod
-    async def save_file(file: UploadFile) -> str :
+    async def save_file(file: UploadFile) -> str:
         if not file.filename:
             raise HTTPException(status_code=400, detail="No file uploaded")
         if file.content_type != "application/pdf":

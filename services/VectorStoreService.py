@@ -33,7 +33,7 @@ class VectorStoreService:
         self.index = self.pc.Index(index_name)
 
     # Store embeddings
-    def store_embeddings(self, embeddings, chunks, filename):
+    def store_embeddings(self, embeddings, chunks, filename, candidate_name):
         vectors = []
 
         for i, emb in enumerate(embeddings):
@@ -42,7 +42,8 @@ class VectorStoreService:
                 "values": emb,   # Gemini embedding values
                 "metadata": {
                     "text": chunks[i],
-                    "filename": filename
+                    "filename": filename,
+                    "candidate_name": candidate_name
                 }
             })
 
