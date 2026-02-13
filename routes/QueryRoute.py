@@ -2,6 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends
 from models.QueryModel import QueryRequest, QueryResponse
 from services.VectorStoreService import VectorStoreService
 from services.EmbeddingSerivce import EmbeddingService
+from services.RagService import RAGService  # NEW IMPORT
 import os
 from dotenv import load_dotenv
 
@@ -20,12 +21,18 @@ def get_embeddings_service():
 
 
 vector_store = VectorStoreService()
+rag_service = RAGService()  # NEW: Initialize RAG service
 
 
 @router.post("/query", response_model=QueryResponse)
-async def query_embeddings(req: QueryRequest, embedding_service: EmbeddingService = Depends(get_embeddings_service)):
+async def query_embeddings(
+        req: QueryRequest,
+        embedding_service: EmbeddingService = Depends(get_embeddings_service)
+):
     try:
+
         query_embedding = embedding_service.embed_chunks([req.query])[0]
+
 
         response = vector_store.index.query(
             vector=query_embedding,
@@ -33,24 +40,45 @@ async def query_embeddings(req: QueryRequest, embedding_service: EmbeddingServic
             include_metadata=True
         )
 
-        seen_files = {}
+        seen_candidates = {}
 
         for match in response["matches"]:
             if match["score"] < MIN_SCORE:
                 continue
-            filename = match["metadata"].get("filename", "unknown")
 
-            if filename not in seen_files:
-                seen_files[filename] = {
+            candidate_name = match["metadata"].get("candidate_name", "Unknown")
+
+            if candidate_name not in seen_candidates:
+                seen_candidates[candidate_name] = {
+                    "candidate_name": candidate_name,
+                    "filename": match["metadata"].get("filename", "unknown"),
+                    "text": match["metadata"].get("text", ""),
                     "score": match["score"],
-                    "text": match["metadata"]["text"],
-                    "filename": filename,
                     "chunk_index": match["metadata"].get("chunk_index", None)
                 }
 
-        results = list(seen_files.values())[:5]
+        top_candidates = list(seen_candidates.values())[:5]
 
-        return {"results": results}
+        if top_candidates:
+            llm_response = rag_service.generate_structured_response(
+                query=req.query,
+                matched_chunks=top_candidates
+            )
+
+            return {
+                "query": req.query,
+                "answer": llm_response["answer"],
+                "candidates": llm_response["candidates"],
+                "total_candidates": len(llm_response["candidates"])
+            }
+        else:
+            # No matches found
+            return {
+                "query": req.query,
+                "answer": "No candidates found matching your criteria. Try adjusting your query or upload more resumes.",
+                "candidates": [],
+                "total_candidates": 0
+            }
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
